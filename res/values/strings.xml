@@ -1,0 +1,62 @@
+<resources>
+
+    <string name="app_name">LoneWorker</string>
+    <string name="scanning">Scanning for devices &#8230;</string>
+    <string name="connecting">Connecting</string>
+    <string name="connected">Connected</string>
+    <string name="connected_to">Connected to : </string>
+    <string name="waiting_for_device">Waiting for device action</string>
+    <string name="select_device">Select a device to connect to</string>
+    <string name="none_paired">No paired devices</string>
+    <string name="none_found">No devices found</string>
+    <string name="title_paired_devices">Paired Devices</string>
+    <string name="title_other_devices">Other Available Devices</string>
+    <string name="button_scan">Scan for devices</string>
+    <string name="bt_not_available">Bluetooth not available</string>
+    <string name="bt_not_enabled_leaving">You did not enable Bluetooth, must close</string>
+    <string name="bt_not_enabled">Please enable Bluetooth</string>
+    <string name="could_not_acquire_location">Could not acquire location</string>
+    <string name="close_connection">Close connection</string>
+    <string name="connection_closed">Connection closed</string>
+    <string name="connection_restart">Use the menu to restart the connection</string>
+    <string name="enable_location">Please enable location services</string>
+    <string name="enable_location_not_enable">You did not enable Location services, must close</string>
+
+    <!-- Options Menu -->
+    <string name="connect">Connect a device</string>
+    <string name="notification_start">Loneworker running</string>
+    <string name="notification_stop">Loneworker stopped</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="set_telephone">Set the target telephone number</string>
+    <string name="set_time_interval">Set the time interval after which an alarm message is sent</string>
+    <string name="set_time_interval_hours">Hours</string>
+    <string name="set_time_interval_minutes">Minutes</string>
+    <string name="set_id">Set an ID which is added to the alarm message</string>
+    <string name="set_hint_telephone">Telephone</string>
+    <string name="set_hint_hours" translatable="false">0</string>
+    <string name="set_hint_minutes" translatable="false">30</string>
+    <string name="set_hint_id">Your Id</string>
+    <string name="settings_done">Connect</string>
+    <string name="settings_close">Close</string>
+    <string name="settings_telephone_missing">Please enter a valid telephone number</string>
+    <string name="settings_telephone_invalid">This telephone number is invalid, please enter a valid telephone number</string>
+    <string name="settings_wrong_numbers">Please enter valid interval numbers</string>
+
+    <!-- sms feedback -->
+    <string name="sms_delivered">SMS delivered</string>
+    <string name="sms_not_delivered">SMS not delivered</string>
+    <string name="sms_sent">SMS sent</string>
+    <string name="sms_generic_failure">Generic failure</string>
+    <string name="sms_no_service">No service</string>
+    <string name="sms_null_pdu" translatable="false">Null PDU</string>
+    <string name="sms_radio_off">Radio off</string>
+    <string name="false_alarm_send">Send</string>
+    <string name="false_alarm_cancel">Cancel</string>
+    <string name="false_alarm_message">False alarm</string>
+    <string name="alarm_sent">Alarm sent on %1$s . Do you want to sent a false alarm message now ? </string>
+    <string name="locating_you">Localisation &#8230;</string>
+    <string name="message_sent">Message sent :</string>
+
+</resources>

@@ -1,0 +1,59 @@
+<resources>
+
+    <string name="app_name">LoneWorker</string>
+    <string name="scanning">Ricerca di dispositivi &#8230;</string>
+    <string name="connecting">Connessione in corso</string>
+    <string name="connected">Connesso</string>
+    <string name="connected_to">Connesso a : </string>
+    <string name="waiting_for_device">Attesa di un messaggio dal dispositivo</string>
+    <string name="select_device">Scegli un dispositivo da connettere</string>
+    <string name="none_paired">Nessun dispositivo associato</string>
+    <string name="none_found">Nessun dispositivo trovato</string>
+    <string name="title_paired_devices">Dispositivi associati</string>
+    <string name="title_other_devices">Altri dispositivi disponibili</string>
+    <string name="button_scan">Ricerca dispositivi</string>
+    <string name="bt_not_available">Bluetooth non disponibile</string>
+    <string name="bt_not_enabled_leaving">Non hai attivato Bluetooth, non é possibile continuare</string>
+    <string name="bt_not_enabled">Si prega di attivare il Bluetooth</string>
+    <string name="could_not_acquire_location">Impossibile acquisire posizione</string>
+    <string name="close_connection">Chiudere connessione</string>
+    <string name="connection_closed">Connessione chiusa</string>
+    <string name="connection_restart">Utilizzare il menu per riavviare la connessione</string>
+    <string name="enable_location">Si prega di attivare i servizi di localizzazione</string>
+    <string name="enable_location_not_enable">Non hai attivato i servizi di localizzazione, non é possibile continuare</string>
+
+    <!-- Options Menu -->
+    <string name="connect">Collegare un dispositivo</string>
+    <string name="notification_start">Loneworker in corso</string>
+    <string name="notification_stop">Loneworker terminato</string>
+
+    <!-- Settings -->
+    <string name="settings">Impostazioni</string>
+    <string name="set_telephone">Impostare il numero di telefono di destinazione</string>
+    <string name="set_time_interval">Impostare l\'intervallo di tempo dopo il quale un messaggio di allarme viene inviato</string>
+    <string name="set_time_interval_hours">Ore</string>
+    <string name="set_time_interval_minutes">Minuti</string>
+    <string name="set_id">Impostare un Id che viene aggiunto al messaggio di allarme</string>
+    <string name="set_hint_telephone">Telefono</string>
+    <string name="set_hint_id">Tuo Id</string>
+    <string name="settings_done">Connetti</string>
+    <string name="settings_close">Chiudi</string>
+    <string name="settings_telephone_missing">Si prega di inserire un numero di telefono valido</string>
+    <string name="settings_telephone_invalid">Questo numero di telefono è invalido, si prega di inserire un numero di telefono valido</string>
+    <string name="settings_wrong_numbers">Si prega di inserire numeri di intervallo validi</string>
+
+    <!-- sms feedback -->
+    <string name="sms_delivered">SMS consegnato</string>
+    <string name="sms_not_delivered">SMS non consegnato</string>
+    <string name="sms_sent">SMS inviato</string>
+    <string name="sms_generic_failure">Errore generico</string>
+    <string name="sms_no_service">Nessun servizio</string>
+    <string name="sms_radio_off">Radio spento</string>
+    <string name="false_alarm_send">Inviare</string>
+    <string name="false_alarm_cancel">Cancella</string>
+    <string name="false_alarm_message">Falso alarm</string>
+    <string name="alarm_sent">Alarme inviato il %1$s . Vuoi inviare un messaggio falso alarme ? </string>
+    <string name="locating_you">Localizzazione &#8230;</string>
+    <string name="message_sent">Messaggio inviato :</string>
+
+</resources>
