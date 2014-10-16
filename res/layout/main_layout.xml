@@ -46,6 +46,7 @@
         android:shadowDx="1.0"
         android:shadowDy="1.0"
         android:shadowRadius="1.0"
-        android:fontFamily="sans-serif" />
+        android:fontFamily="sans-serif"
+        android:text="@string/default_display_time" />
 
 </RelativeLayout>

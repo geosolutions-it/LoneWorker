@@ -21,7 +21,8 @@
     <string name="connection_restart">Use the menu to restart the connection</string>
     <string name="enable_location">Please enable location services</string>
     <string name="enable_location_not_enable">You did not enable Location services, must close</string>
-
+	<string name="default_display_time" translatable="false">00:00:00</string>
+    
     <!-- Options Menu -->
     <string name="connect">Connect a device</string>
     <string name="notification_start">Loneworker running</string>

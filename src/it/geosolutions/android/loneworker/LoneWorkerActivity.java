@@ -127,7 +127,10 @@ public class LoneWorkerActivity  extends Activity{
 			checkAllNecessaryProps();
 		}
 		
-		
+		// Set the default time
+		if(time_TV != null){
+			time_TV.setText(getString(R.string.default_display_time));
+		}
 	}
 
 	@Override
@@ -358,5 +361,16 @@ public class LoneWorkerActivity  extends Activity{
 				}
 			}
 		}	
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		// re-set the default time
+		time_TV = (TextView) findViewById(R.id.timeTV);
+		if(time_TV != null){
+			time_TV.setText(getString(R.string.default_display_time));
+		}
 	}
 }
