@@ -22,6 +22,7 @@
     <string name="enable_location">Please enable location services</string>
     <string name="enable_location_not_enable">You did not enable Location services, must close</string>
 	<string name="default_display_time" translatable="false">00:00:00</string>
+    <string name="power_saving_not_enabled_leaving">You did not disable Power Saving, must close</string>
     
     <!-- Options Menu -->
     <string name="connect">Connect a device</string>

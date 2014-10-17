@@ -1,24 +1,25 @@
 package it.geosolutions.android.loneworker;
 
 import it.geosolutions.android.loneworker.service.BluetoothService;
-
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Locale;
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningServiceInfo;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.ContentObserver;
 import android.graphics.drawable.ColorDrawable;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -59,6 +60,9 @@ public class LoneWorkerActivity  extends Activity{
 	private static final int REQUEST_SETTINGS = 3;
 	private static final int REQUEST_LOCATION = 4;
 	private static final int REQUEST_ALARM = 5;
+	private static final int REQUEST_POWER_SAVING_DEACTIVATION = 6;
+	
+	private static AlertDialog currentAlert;
 
 	private TextView loneWorker_TV;
 	private TextView time_TV;
@@ -131,6 +135,54 @@ public class LoneWorkerActivity  extends Activity{
 		if(time_TV != null){
 			time_TV.setText(getString(R.string.default_display_time));
 		}
+
+		//TODO test this on a Samsung device
+		getContentResolver().registerContentObserver(Settings.System.CONTENT_URI, true, new ContentObserver(new Handler()){
+			@Override
+			public void onChange(boolean selfChange, Uri uri){
+				super.onChange(selfChange, uri);
+
+				String key = uri.getPath();
+				key = key.substring(key.lastIndexOf("/") + 1, key.length());
+
+				if (key.equals("user_powersaver_enable") || key.equals("psm_switch")){
+					boolean batterySaverEnabled = Settings.System.getString(getContentResolver(), key).equals("1");
+					// do something
+					if(batterySaverEnabled){
+
+						final AlertDialog.Builder builder = new AlertDialog.Builder(LoneWorkerActivity.this);
+						builder.setIcon(R.drawable.ic_launcher);
+
+						builder.setTitle(getString(R.string.app_name));
+						builder.setMessage(getString(R.string.app_name));
+						builder.setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+
+								dialog.dismiss();
+
+								startActivityForResult(new Intent(Settings.ACTION_SETTINGS),REQUEST_POWER_SAVING_DEACTIVATION);
+							}
+						});
+						builder.setNegativeButton(getString(R.string.false_alarm_cancel), new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+
+								dialog.dismiss();
+								Toast.makeText(getBaseContext(), R.string.power_saving_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+								finish();
+							}
+						});
+						if(currentAlert == null || !currentAlert.isShowing()){
+							currentAlert= builder.create();
+							currentAlert.show();
+						}
+					}
+				}
+			}
+		});
 	}
 
 	@Override
@@ -204,6 +256,12 @@ public class LoneWorkerActivity  extends Activity{
 		
 		Log.i(TAG, "onActivityResult " + resultCode);
 		switch (requestCode) {
+		case REQUEST_POWER_SAVING_DEACTIVATION:
+			if (resultCode == Activity.RESULT_CANCELED) {
+				Toast.makeText(getBaseContext(), R.string.power_saving_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+				finish();
+			}
+			break;
 		case REQUEST_ALARM:
 			
 			closeButton.setVisibility(View.GONE);

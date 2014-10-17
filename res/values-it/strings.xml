@@ -21,6 +21,9 @@
     <string name="connection_restart">Utilizzare il menu per riavviare la connessione</string>
     <string name="enable_location">Si prega di attivare i servizi di localizzazione</string>
     <string name="enable_location_not_enable">Non hai attivato i servizi di localizzazione, non é possibile continuare</string>
+    <string name="power_saving_not_enabled_leaving">Non hai disattivato il risparmio energia, non é possibile continuare</string>
+    
+        
 
     <!-- Options Menu -->
     <string name="connect">Collegare un dispositivo</string>
