@@ -61,6 +61,16 @@ import android.util.Log;
 public class BluetoothService extends Service {
 	
 	private final static int THIS_SERVICE_ID = 111;
+	
+	public enum SERVICE_STATE{
+		NONE,
+		RUNNING,
+		FINISHED,
+		EXPIRED;
+		
+	};
+	
+	public static SERVICE_STATE mState = SERVICE_STATE.NONE;
 
 	// Message types sent from the BluetoothService Handler
 	public static final int MESSAGE_STATE_CHANGE = 1;
@@ -72,8 +82,10 @@ public class BluetoothService extends Service {
 	public static final String DEVICE_NAME = "device_name";
 	
 	public final static String UI_UPDATE_STATE = "it.geosolutions.android.loneworker.ui_update.state";
+	public final static String UI_UPDATE_STATE_DETAIL = "it.geosolutions.android.loneworker.ui_update.state_detail";
 	public final static String UI_UPDATE_TIME = "it.geosolutions.android.loneworker.ui_update_time";
 	public final static String UI_UPDATE_MESSAGE = "it.geosolutions.android.loneworker.ui_update.message";
+	public final static String UI_UPDATE_MESSAGE_DETAIL = "it.geosolutions.android.loneworker.ui_update.message_detail";
 	public final static String UI_UPDATE_SMS_FEEDBACK = "it.geosolutions.android.loneworker.ui_update.sms_feedback";
 	public final static String STOP_SERVICE = "it.geosolutions.android.loneworker.stop_service";
 	public final static String DEVICE_ADDRESS = "it.geosolutions.android.loneworker.device_address";
@@ -119,15 +131,18 @@ public class BluetoothService extends Service {
 				case BluetoothConnector.STATE_CONNECTED:
 					//the device was connected
 					
-					//save last state to recover if this service dies
-					Editor ed = PreferenceManager.getDefaultSharedPreferences(bs).edit();
-					ed.putLong(LAST_RESET, System.currentTimeMillis());
-					ed.putString(DEVICE_ADDRESS, bs.mConnectedDeviceAdress);
-					ed.commit();
-					
-					bs.vibrator.cancel();
-					bs.mCountDown.cancel();
-					bs.mCountDown.start();
+					if(mState == SERVICE_STATE.RUNNING){
+
+						//save last state to recover if this service dies
+						Editor ed = PreferenceManager.getDefaultSharedPreferences(bs).edit();
+						ed.putLong(LAST_RESET, System.currentTimeMillis());
+						ed.putString(DEVICE_ADDRESS, bs.mConnectedDeviceAdress);
+						ed.commit();
+
+						bs.vibrator.cancel();
+						bs.mCountDown.cancel();
+						bs.mCountDown.start();
+					}
 										
 					break;
 				case BluetoothConnector.STATE_CONNECTING:
@@ -137,18 +152,21 @@ public class BluetoothService extends Service {
 				}
 				break;
 			case MESSAGE_READ:
-				byte[] readBuf = (byte[]) msg.obj;
-				// construct a string from the valid bytes in the buffer
-				String readMessage = new String(readBuf, 0, msg.arg1);
-				Log.d(TAG, "MESSAGE_READ: " + readMessage);
-				bs.sendUIUpdate(UI_UPDATE_STATE,readMessage);
-
+				if(mState == SERVICE_STATE.RUNNING){
+					byte[] readBuf = (byte[]) msg.obj;
+					// construct a string from the valid bytes in the buffer
+					String readMessage = new String(readBuf, 0, msg.arg1);
+					Log.d(TAG, "MESSAGE_READ: " + readMessage);
+					bs.sendUIUpdate(UI_UPDATE_MESSAGE,readMessage);
+				}
 				break;
 			case MESSAGE_DEVICE_NAME:
 				break;
 			case MESSAGE_CONNECTION_LOST:
-				if(bs.mConnectedDeviceAdress != null){
-					bs.connectDevice(bs.mConnectedDeviceAdress);
+				if(mState == SERVICE_STATE.RUNNING){
+					if(bs.mConnectedDeviceAdress != null){
+						bs.connectDevice(bs.mConnectedDeviceAdress);
+					}
 				}
 				break;
 			case MESSAGE_CONNECTION_FAILED:
@@ -158,6 +176,7 @@ public class BluetoothService extends Service {
 		}
 	};
 	private MCountDownTimer mCountDown;
+	
 	class MCountDownTimer extends CountDownTimer {
 
 		public MCountDownTimer(long millisInFuture, long countDownInterval) {
@@ -177,6 +196,7 @@ public class BluetoothService extends Service {
 		@Override
 		public void onFinish() {
 			
+			setState(SERVICE_STATE.EXPIRED);
 
 			sendBroadcast(new Intent(TIME_EXPIRED_INTENT));
 			
@@ -198,7 +218,7 @@ public class BluetoothService extends Service {
 			if(millis < Constants.VIBRATE_THRESHOLD){
 				//interpolate vibration time to increase vibration when time is elapsing
 				int frequency = (int) ((Constants.MAX_VIBRATE * (1 - ((float) millis / Constants.VIBRATE_THRESHOLD))) + Constants.MIN_VIBRATE);
-				Log.d(TAG, "vibrating for :"+frequency);
+//				Log.d(TAG, "vibrating for :"+frequency);
 
 				vibrator.vibrate(frequency);
 				
@@ -209,12 +229,12 @@ public class BluetoothService extends Service {
 				    Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
 				    Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
 				    r.play();
-//				    playsSound = true;
+
 				} catch (Exception e) {
 					Log.e(TAG, e.getClass().getSimpleName(),e);
 				}
 			}
-			Log.d(TAG, "remaining :"+millis);
+//			Log.d(TAG, "remaining :"+millis);
 		}   
 	};
 	
@@ -222,6 +242,8 @@ public class BluetoothService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		Log.d(TAG, "onCreate");
+		
+		setState(SERVICE_STATE.NONE);
 		
 		vibrator = (Vibrator)getSystemService(Context.VIBRATOR_SERVICE);		
 		
@@ -296,6 +318,8 @@ public class BluetoothService extends Service {
 
 		connectDevice(mConnectedDeviceAdress);
 		mCountDown.start();
+		
+		setState(SERVICE_STATE.RUNNING);
 	}
 
 	@Override
@@ -397,13 +421,20 @@ public class BluetoothService extends Service {
 	}
 	
 
-	
+	public void sendStateUpdate(){
+		
+		Intent i = new Intent(UI_UPDATE_STATE);
+		
+		i.putExtra(UI_UPDATE_STATE_DETAIL, mState.ordinal());
+			
+		sendBroadcast(i);
+	}
 	public void sendUIUpdate(String intent_id,String message){
 		
 		Intent i = new Intent(intent_id);
 		
 		if(message != null){
-			i.putExtra(UI_UPDATE_MESSAGE, message);
+			i.putExtra(UI_UPDATE_MESSAGE_DETAIL, message);
 		}
 		
 		sendBroadcast(i);
@@ -421,6 +452,8 @@ public class BluetoothService extends Service {
 	}
 	
 	public void stop(){
+		
+		setState(SERVICE_STATE.FINISHED);
 		
         stopForeground(true);
         
@@ -449,5 +482,15 @@ public class BluetoothService extends Service {
 		
     	BluetoothService.this.stopSelf();
 	}
+	
+	private void setState(SERVICE_STATE pState){
+		mState = pState;
+		sendStateUpdate();
+	}
 
+	public static SERVICE_STATE getState(){
+		
+		return mState;
+		
+	}
 }

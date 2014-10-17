@@ -1,11 +1,7 @@
 package it.geosolutions.android.loneworker;
 
 import it.geosolutions.android.loneworker.service.BluetoothService;
-
-import java.text.SimpleDateFormat;
-import java.util.List;
-import java.util.Locale;
-
+import it.geosolutions.android.loneworker.service.BluetoothService.SERVICE_STATE;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -58,7 +54,6 @@ public class LoneWorkerActivity  extends Activity{
 	private static final int REQUEST_ENABLE_BT = 2;
 	private static final int REQUEST_SETTINGS = 3;
 	private static final int REQUEST_LOCATION = 4;
-	private static final int REQUEST_ALARM = 5;
 
 	private TextView loneWorker_TV;
 	private TextView time_TV;
@@ -78,15 +73,13 @@ public class LoneWorkerActivity  extends Activity{
 		super.onCreate(savedInstanceState);
 
 		setContentView(R.layout.main_layout);
-		
+
 		getActionBar().setBackgroundDrawable(new ColorDrawable(0xff007DC5));
-		
+
 		mUIUpdateReceiver = new UIUpdateReceiver();
 
 		loneWorker_TV = (TextView) findViewById(R.id.loneWorkerTV);
-
 		time_TV = (TextView) findViewById(R.id.timeTV);
-
 		closeButton = (Button) findViewById(R.id.close_button);
 
 		closeButton.setOnClickListener(new View.OnClickListener() {
@@ -94,21 +87,11 @@ public class LoneWorkerActivity  extends Activity{
 			@Override
 			public void onClick(View v) {
 
-				//only if service is running do something
-				if(isMyServiceRunning(getBaseContext())){
-					
+				if(BluetoothService.getState() == SERVICE_STATE.RUNNING){
+
 					sendBroadcast(new Intent(BluetoothService.STOP_SERVICE));
-					stopService(new Intent(LoneWorkerActivity.this, BluetoothService.class));
-					
-					loneWorker_TV.setText(getString(R.string.connection_restart));
-					
-					closeButton.setText(R.string.connection_closed);
-					
-					toogleMenu(true);
-				}else{
-					
 				}
-				
+
 			}
 		});
 
@@ -118,19 +101,14 @@ public class LoneWorkerActivity  extends Activity{
 			finish();
 			return;
 		}
-		
-		//TODO instead of this get actual state of service none, running, expired
-		//and configure ui here according to it
-		
-		if(!isMyServiceRunning(getBaseContext())){
-			//not running, check properties
+
+		if(BluetoothService.getState() == SERVICE_STATE.NONE){
+
 			checkAllNecessaryProps();
 		}
-		
-		// Set the default time
-		if(time_TV != null){
-			time_TV.setText(getString(R.string.default_display_time));
-		}
+
+		configureUIAccordingToServiceState(BluetoothService.getState());	
+
 	}
 
 	@Override
@@ -139,6 +117,7 @@ public class LoneWorkerActivity  extends Activity{
 		Log.d(TAG, "onStart");
 		
 		registerReceiver(mUIUpdateReceiver, new IntentFilter(BluetoothService.UI_UPDATE_TIME));
+		registerReceiver(mUIUpdateReceiver, new IntentFilter(BluetoothService.UI_UPDATE_MESSAGE));
 		registerReceiver(mUIUpdateReceiver, new IntentFilter(BluetoothService.UI_UPDATE_STATE));
 		registerReceiver(mUIUpdateReceiver, new IntentFilter(BluetoothService.UI_UPDATE_SMS_FEEDBACK));
 		registerReceiver(mUIUpdateReceiver, new IntentFilter(BluetoothService.TIME_EXPIRED_INTENT));
@@ -194,21 +173,48 @@ public class LoneWorkerActivity  extends Activity{
 			startServiceIfNecessary();
 			
 		// services runs, all fine, must be recreation of activity, hide menu
-		} else {
-			toogleMenu(false);
-		}
+		} 
 		
+	}
+	
+	
+	public void configureUIAccordingToServiceState(SERVICE_STATE pState){
+		
+	switch(BluetoothService.getState()){
+		
+		case NONE:
+			time_TV.setText(getString(R.string.default_display_time));
+			closeButton.setVisibility(View.GONE);
+			loneWorker_TV.setText(getString(R.string.waiting_for_device));
+			toogleMenu(true);
+			break;
+		case RUNNING:
+			closeButton.setVisibility(View.VISIBLE);
+			closeButton.setText(R.string.close_connection);
+			loneWorker_TV.setText(R.string.waiting_for_device);
+			toogleMenu(false);
+			break;
+		case FINISHED:	
+			closeButton.setVisibility(View.GONE);
+			loneWorker_TV.setText(R.string.notification_stop);
+			toogleMenu(true);
+			break;
+		case EXPIRED:
+			closeButton.setVisibility(View.GONE);
+			loneWorker_TV.setText(getString(R.string.locating_you));
+			toogleMenu(true);
+			break;
+		default:
+			break;
+		
+		}
 	}
 	
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
 		
 		Log.i(TAG, "onActivityResult " + resultCode);
 		switch (requestCode) {
-		case REQUEST_ALARM:
-			
-			closeButton.setVisibility(View.GONE);
-			
-			break;
+
 		case REQUEST_LOCATION:
 			if(locationServicesAvailable()){
 				checkAllNecessaryProps();
@@ -264,9 +270,6 @@ public class LoneWorkerActivity  extends Activity{
 			Intent i = new Intent(LoneWorkerActivity.this, BluetoothService.class);
 			i.putExtra(BluetoothService.DEVICE_ADDRESS, mConnectedDeviceAdress);
 			startService(i);	
-			toogleMenu(false);
-			closeButton.setText(R.string.close_connection);
-			loneWorker_TV.setText(R.string.waiting_for_device);
 
 		}	
 	}
@@ -281,10 +284,6 @@ public class LoneWorkerActivity  extends Activity{
 		menu_connect = menu.findItem(R.id.connect);
 		menu_settings = menu.findItem(R.id.settings);
 		
-		if(isMyServiceRunning(getBaseContext())){
-			toogleMenu(false);
-		}
-		
 		return true;
 	}
 
@@ -296,8 +295,6 @@ public class LoneWorkerActivity  extends Activity{
 			// Launch the DeviceListActivity to see devices and do scan
 			serverIntent = new Intent(this, DeviceListActivity.class);
 			startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
-			closeButton.setText(getString(R.string.close_connection));
-			loneWorker_TV.setText(getString(R.string.waiting_for_device));
 			return true;
 		case R.id.settings:
 			startActivityForResult(new Intent(this, SettingsDialogActivity.class), REQUEST_SETTINGS);
@@ -338,20 +335,24 @@ public class LoneWorkerActivity  extends Activity{
 
 			if(intent.getAction().equals(BluetoothService.TIME_EXPIRED_INTENT)){
 				
-				closeButton.setText(getString(R.string.connection_closed));
-				loneWorker_TV.setText(getString(R.string.locating_you));
-				toogleMenu(true);
+				//actually not used, for future "false alarm" implementation
 				
-			}else{ //message state 
+			}else if(intent.getAction().equals(BluetoothService.UI_UPDATE_STATE)){
+				final int state = intent.getIntExtra(BluetoothService.UI_UPDATE_STATE_DETAIL, -1);
+				Log.d(TAG, "State update " + state);
+				if(state != -1){
+					configureUIAccordingToServiceState(SERVICE_STATE.values()[state]);
+				}
+			}else { //message state 
 
-				final String message = intent.getStringExtra(BluetoothService.UI_UPDATE_MESSAGE);
+				final String message = intent.getStringExtra(BluetoothService.UI_UPDATE_MESSAGE_DETAIL);
 
 				if(message == null ){
 					Log.e(TAG, "intent without message received");
 					return;
 				}
 
-				if(intent.getAction().equals(BluetoothService.UI_UPDATE_STATE) ||
+				if(intent.getAction().equals(BluetoothService.UI_UPDATE_MESSAGE) ||
 						intent.getAction().equals(BluetoothService.UI_UPDATE_SMS_FEEDBACK)){
 
 					loneWorker_TV.setText(message);
