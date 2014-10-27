@@ -1,5 +1,6 @@
 package it.geosolutions.android.loneworker.service;
 
+import it.geosolutions.android.loneworker.BuildConfig;
 import it.geosolutions.android.loneworker.LoneWorkerActivity;
 import it.geosolutions.android.loneworker.R;
 import it.geosolutions.android.loneworker.bluetooth.BluetoothConnector;
@@ -79,6 +80,18 @@ public class BluetoothService extends Service {
 	public static final int MESSAGE_CONNECTION_LOST = 4;
 	public static final int MESSAGE_CONNECTION_FAILED = 5;
 	
+	// User actively send a distress signal (HELP)
+	public static final int SMS_USER_DISTRESS = 1001;
+	public static final String BT_MESSAGE_USER_DISTRESS = "HELP";
+	// BlueTooth device sends alarm message (ALARM)
+	public static final int SMS_DEVICE_ALARM = 1002;
+	public static final String BT_MESSAGE_DEVICE_ALARM = "ALARM";
+	// BlueTooth device unreachable
+	public static final int SMS_DEVICE_UNREACHEABLE = 1003;
+	
+	// Everything is OK
+	public static final String BT_MESSAGE_OK = "OK";
+	
 	public static final String DEVICE_NAME = "device_name";
 	
 	public final static String UI_UPDATE_STATE = "it.geosolutions.android.loneworker.ui_update.state";
@@ -132,16 +145,7 @@ public class BluetoothService extends Service {
 					//the device was connected
 					
 					if(mState == SERVICE_STATE.RUNNING){
-
-						//save last state to recover if this service dies
-						Editor ed = PreferenceManager.getDefaultSharedPreferences(bs).edit();
-						ed.putLong(LAST_RESET, System.currentTimeMillis());
-						ed.putString(DEVICE_ADDRESS, bs.mConnectedDeviceAdress);
-						ed.commit();
-
-						bs.vibrator.cancel();
-						bs.mCountDown.cancel();
-						bs.mCountDown.start();
+						resetCountdown(bs);
 					}
 										
 					break;
@@ -151,15 +155,42 @@ public class BluetoothService extends Service {
 					break;
 				}
 				break;
+				
 			case MESSAGE_READ:
+				// A message is received, it can be:
+				// HELP  : The user is explicitly calling for help
+				// ALARM : The user failed to answer to the BlueTooth device, an alarm must be sent
+				// OK    : The BlueTooth device heartbeat
 				if(mState == SERVICE_STATE.RUNNING){
-					byte[] readBuf = (byte[]) msg.obj;
-					// construct a string from the valid bytes in the buffer
-					String readMessage = new String(readBuf, 0, msg.arg1);
-					Log.d(TAG, "MESSAGE_READ: " + readMessage);
-					bs.sendUIUpdate(UI_UPDATE_MESSAGE,readMessage);
+					if(msg.obj != null){
+						byte[] readBuf = (byte[]) msg.obj;
+						// construct a string from the valid bytes in the buffer
+						String readMessage = new String(readBuf, 0, msg.arg1);
+						
+						// must use .contains() because the message can have \r\n characters
+						if(readMessage.contains(BT_MESSAGE_USER_DISTRESS)){
+							// User calls for help
+							bs.acquireLocationAndSendSMS(SMS_USER_DISTRESS);
+							
+						}else if( readMessage.contains(BT_MESSAGE_DEVICE_ALARM) ){
+							// Device send alarm
+							bs.acquireLocationAndSendSMS(SMS_DEVICE_ALARM);
+							
+						}else if( readMessage.contains(BT_MESSAGE_OK)){
+
+							resetCountdown(bs);
+							
+						}
+						
+						if(BuildConfig.DEBUG){
+							Log.d(TAG, "MESSAGE_READ: " + readMessage);
+						}
+						
+						bs.sendUIUpdate(UI_UPDATE_MESSAGE,readMessage);
+					}
 				}
 				break;
+				
 			case MESSAGE_DEVICE_NAME:
 				break;
 			case MESSAGE_CONNECTION_LOST:
@@ -175,6 +206,8 @@ public class BluetoothService extends Service {
 			}
 		}
 	};
+	
+	
 	private MCountDownTimer mCountDown;
 	
 	class MCountDownTimer extends CountDownTimer {
@@ -374,6 +407,12 @@ public class BluetoothService extends Service {
 		return "sdk".equals( Build.PRODUCT );
 	}
 	
+	
+	/**
+	 * Gets location and sends it to the preconfigured number
+	 * If no location is acquired, sends a failure message
+	 * If the users specified a text ID, it is added to the message
+	 */
 	public void acquireLocationAndSendSMS(){
 		
 		//acquire location callback, invoked when found
@@ -382,38 +421,32 @@ public class BluetoothService extends Service {
 			public void gotLocation(final Location location){
 				
 				final String id = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString(BluetoothService.USER_ID, null);
-				String toSend = null;
+				StringBuilder toSend = new StringBuilder();
 				
 				//the location can still be null if after timeout no location was available. This should happen very rarely
 				if(location == null){
 					//TODO what to do when there is no location ? wait unlimited, send another message ?
 					//for now send anyway with a message that the location could not be found
-					toSend = getString(R.string.could_not_acquire_location);
-					
-					if(id != null){
-						//TODO define this different, better, normalized ?
-						toSend += " "+id;
-					}			
+					toSend.append(getString(R.string.could_not_acquire_location));
+						
 				}else{
 
-					toSend = GeoUtil.locationToString(location);
-					
-					if(id != null){
-						//TODO define this different, better, normalized ?
-						toSend += " "+id;
-					}
+					toSend.append(GeoUtil.locationToString(location));
 				}	
 				
-				//send
-				SMSHelper.sendSMS(getBaseContext(), toSend);
+				// Set user defined ID
+				if(id != null){
+					toSend.append(" ").append(id);
+				}
 				
-				sendUIUpdate(UI_UPDATE_STATE,getString(R.string .message_sent)+ " "+toSend);
+				//send
+				SMSHelper.sendSMS(getBaseContext(), toSend.toString());
+				
+				sendUIUpdate(UI_UPDATE_STATE,getString(R.string .message_sent)+ " "+toSend.toString());
 				
 				//stop this service
 				stop();
 
-				
-				
 			}
 		};
 		//retrieve location with timeout set in constants
@@ -429,6 +462,7 @@ public class BluetoothService extends Service {
 			
 		sendBroadcast(i);
 	}
+	
 	public void sendUIUpdate(String intent_id,String message){
 		
 		Intent i = new Intent(intent_id);
@@ -493,4 +527,93 @@ public class BluetoothService extends Service {
 		return mState;
 		
 	}
+	
+	/**
+	 * Reset the countdown of the given service
+	 * @param bs
+	 */
+	public static void resetCountdown(BluetoothService bs) {
+		
+		if(bs == null){
+			return;
+		}
+		
+		//save last state to recover if this service dies
+		Editor ed = PreferenceManager.getDefaultSharedPreferences(bs).edit();
+		ed.putLong(LAST_RESET, System.currentTimeMillis());
+		ed.putString(DEVICE_ADDRESS, bs.mConnectedDeviceAdress);
+		ed.commit();
+
+		// stop sound and vibration
+		// reset and restart the timer
+		bs.vibrator.cancel();
+		bs.mCountDown.cancel();
+		bs.mCountDown.start();
+	}
+	
+	
+	
+	/**
+	 * Gets the Location from GPS, sends an SMS and leaves the service running
+	 * @param reason
+	 */
+	public void acquireLocationAndSendSMS(final int reason){
+		
+		//acquire location callback, invoked when found
+		LocationResultCallback locationResult = new LocationResultCallback(){
+			@Override
+			public void gotLocation(final Location location){
+				
+				final String id = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getString(BluetoothService.USER_ID, null);
+				StringBuilder toSend = new StringBuilder();
+				
+				// The location can still be null if after timeout no location was available.
+				// This should happen very rarely
+				if(location == null){
+					// If no location can be acquired send a message saying the location could not be found
+					toSend.append(getString(R.string.could_not_acquire_location));		
+				}else{
+					toSend.append(GeoUtil.locationToString(location));
+				}	
+				
+				if(id != null){
+					toSend.append(" ").append(id);
+				}
+				
+				switch (reason) {
+				case SMS_USER_DISTRESS:
+					// User have pressed an help button
+					toSend.append(" ").append(getString(R.string.sms_help_message));
+					
+					break;
+
+				case SMS_DEVICE_ALARM:
+					// BlueTooth device sent alarm
+					toSend.append(" ").append(getString(R.string.sms_alarm_message));
+					
+					break;
+
+				case SMS_DEVICE_UNREACHEABLE:
+					// BlueTooth device unreachable
+					toSend.append(" ").append(getString(R.string.sms_unreachable_message));
+					
+					break;
+
+				default:
+					break;
+				}
+				
+				//send
+				SMSHelper.sendSMS(getBaseContext(), toSend.toString());
+				
+				sendUIUpdate(UI_UPDATE_STATE,getString(R.string .message_sent)+ " "+toSend.toString());
+
+			}
+		};
+		
+		//retrieve location with timeout set in constants
+		new LocationProvider().getLocation(BluetoothService.this, locationResult);
+	}
+	
+	
 }
