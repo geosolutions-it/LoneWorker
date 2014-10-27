@@ -13,18 +13,24 @@ public class GeoUtil {
 	 * @return
 	 */
 	public static String locationToString ( final Location  loc ) {
-		String                  s = "geo:";
+		
+		StringBuilder sb = new StringBuilder("geo:");
 
-		s += doubleToString (loc.getLatitude (), 6) + ","
-				+ doubleToString (loc.getLongitude (), 6);
+		// Add location
+		sb.append(doubleToString (loc.getLatitude (), 6)).append(",")
+				.append(doubleToString (loc.getLongitude (), 6));
 
-		if (loc.hasAltitude ())
-			s += "," + doubleToString (loc.getAltitude (), 3);
+		// Add altitude
+		if (loc.hasAltitude()){
+			sb.append(",").append(doubleToString (loc.getAltitude (), 3));
+		}
 
-		if (loc.hasAccuracy ())
-			s += ";u=" + doubleToString (loc.getAccuracy (), 3);
+		// Add accuracy
+		if (loc.hasAccuracy ()){
+			sb.append(";u=").append(doubleToString (loc.getAccuracy (), 3));
+		}
 
-		return s;
+		return sb.toString();
 	}
 
 	/*
