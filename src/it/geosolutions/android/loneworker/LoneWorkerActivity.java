@@ -333,19 +333,25 @@ public class LoneWorkerActivity  extends Activity{
 		@Override
 		public void onReceive(Context context, Intent intent) {
 
+			final String message = intent.getStringExtra(BluetoothService.UI_UPDATE_MESSAGE_DETAIL);
+		
 			if(intent.getAction().equals(BluetoothService.TIME_EXPIRED_INTENT)){
 				
 				//actually not used, for future "false alarm" implementation
 				
 			}else if(intent.getAction().equals(BluetoothService.UI_UPDATE_STATE)){
+				
 				final int state = intent.getIntExtra(BluetoothService.UI_UPDATE_STATE_DETAIL, -1);
 				Log.d(TAG, "State update " + state);
 				if(state != -1){
 					configureUIAccordingToServiceState(SERVICE_STATE.values()[state]);
 				}
+				
+				if(message != null){
+					loneWorker_TV.setText(message);
+				}
+				
 			}else { //message state 
-
-				final String message = intent.getStringExtra(BluetoothService.UI_UPDATE_MESSAGE_DETAIL);
 
 				if(message == null ){
 					Log.e(TAG, "intent without message received");
@@ -356,6 +362,7 @@ public class LoneWorkerActivity  extends Activity{
 						intent.getAction().equals(BluetoothService.UI_UPDATE_SMS_FEEDBACK)){
 
 					loneWorker_TV.setText(message);
+					
 				}else{
 
 					time_TV.setText(message);

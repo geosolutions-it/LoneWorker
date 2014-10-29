@@ -1,5 +1,3 @@
-package it.geosolutions.android.loneworker.bluetooth;
-
 /*
  * Copyright (C) 2009 The Android Open Source Project
  *
@@ -15,7 +13,9 @@ package it.geosolutions.android.loneworker.bluetooth;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package it.geosolutions.android.loneworker.bluetooth;
 
+import it.geosolutions.android.loneworker.BuildConfig;
 import it.geosolutions.android.loneworker.service.BluetoothService;
 
 import java.io.IOException;
@@ -44,7 +44,7 @@ import android.util.Log;
 public class BluetoothConnector {
     // Debugging
     private static final String TAG = BluetoothConnector.class.getSimpleName();
-    private static final boolean D = false;
+    private static final boolean D = BuildConfig.DEBUG;
 
     private static final UUID STANDARD_UUID =  UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -311,7 +311,9 @@ public class BluetoothConnector {
             try {
                 mmSocket.close();
             } catch (IOException e) {
-                Log.e(TAG, "close() of connect socket failed", e);
+            	if(D){
+            		Log.e(TAG, "close() of connect socket failed", e);
+            	}
             }
         }
     }

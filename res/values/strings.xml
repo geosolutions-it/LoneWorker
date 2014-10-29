@@ -23,9 +23,9 @@
     <string name="enable_location_not_enable">You did not enable Location services, must close</string>
 	<string name="default_display_time" translatable="false">00:00:00</string>
     
-	<string name="sms_help_message">HELP</string>
-	<string name="sms_alarm_message">ALARM</string>
-	<string name="sms_unreachable_message">BT LOST</string>
+	<string name="sms_help_message" translatable="false">HELP</string>
+	<string name="sms_alarm_message" translatable="false">ALARM</string>
+	<string name="sms_unreachable_message" translatable="false">BT LOST</string>
 		
     <!-- Options Menu -->
     <string name="connect">Connect a device</string>
