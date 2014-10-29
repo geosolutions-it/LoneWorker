@@ -304,7 +304,7 @@ public class BluetoothService extends Service {
 		final long savedInterval = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getLong(BluetoothService.TIME_INTERVAL, 0);
 		long remainingMillis = savedInterval;
 		
-		if (startId == 2) { // handles service crash
+		if (startId == Service.START_NOT_STICKY || startId == Service.START_REDELIVER_INTENT) { // handles service crash
 			
 			//TODO test this
 			
@@ -323,7 +323,9 @@ public class BluetoothService extends Service {
 		
 		if(address == null || address.equals("")){
 			//invalid, cannot continue
-			throw new IllegalArgumentException("no device address provided");
+			//throw new IllegalArgumentException("no device address provided");
+			stop();
+			return Service.START_NOT_STICKY;
 		}
 		
 		mCountDown = new MCountDownTimer(remainingMillis, Constants.COUNTDOWN_FREQUENCY);
