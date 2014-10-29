@@ -436,6 +436,9 @@ public class BluetoothService extends Service {
 					toSend.append(GeoUtil.locationToString(location));
 				}	
 				
+				// Add reason
+				toSend.append(" ").append(getString(R.string.sms_unreachable_message));
+				
 				// Set user defined ID
 				if(id != null){
 					toSend.append(" ").append(id);
